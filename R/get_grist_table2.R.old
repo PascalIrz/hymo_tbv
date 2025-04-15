@@ -1,6 +1,6 @@
 get_grist_table <-
-  function(url,
-           token,
+  function(url = "https://grist.numerique.gouv.fr/api/docs/qkEHgz98d6QGkSVX1HF4d4/sql",
+           token = Sys.getenv('GRIST_TBV_API_KEY'),
            table) {
     #paramètre
     query_params <- list(q = paste0("SELECT * FROM ", table))
