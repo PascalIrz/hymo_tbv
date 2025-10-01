@@ -4,3 +4,5 @@
 .Ruserdata
 
 /scripts/00_setup.R
+
+/processed_data/
