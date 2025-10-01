@@ -1,0 +1,101 @@
+---
+title: "BDD ROZHACE"
+subtitle: "Préparation des données"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+#  bookdown::word_document2
+always_allow_html: true
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Setup
+
+## Load packages and functions
+
+```{r}
+library(tidyverse)
+library(sf)
+library(mapview)
+
+# install custom functions
+my_functions <- list.files(path = "../R", pattern = ".R", full.names = TRUE)
+map(.x = my_functions,
+    .f = source)
+```
+
+## Load data
+
+```{r}
+load(file = "../processed_data/grist_dfs.rda")
+```
+
+# Spatialisation des sites
+
+```{r}
+station_geo <- station %>% 
+  st_as_sf(coords = c("X1", "Y1"), crs = st_crs(4326))
+
+mapview(station_geo)
+```
+
+
+# Nettoyage des dataframes
+
+Il s'agit de gérer des détails de format et d'homogénéiser 
+
+## *station*
+
+```{r}
+station <- station %>% 
+  rename(sta_id = id)
+```
+
+## *operation*
+
+```{r}
+operation <- operation %>% 
+  rename(ope_id = id,
+         sta_id = Station)
+```
+
+
+## *transect* 
+
+```{r}
+transect <- transect %>% 
+  filter(!is.na(Lpb_m_)) %>% 
+  mutate(Numero_du_transect = as.integer(Numero_du_transect),
+         H_max_m_ = as.character(H_max_m_),
+         H_max_m_ = ifelse(H_max_m_ == "NULL", NA, as.numeric(H_max_m_))) %>% 
+  rename(tra_id = id,
+         ope_id = Operation)
+```
+
+## *facies*
+
+```{r}
+facies <- facies %>% 
+  rename(fac_id = id,
+         ope_id = Operation2)
+```
+
+## *photos*
+
+```{r}
+photos <- photos %>% 
+  rename(pho_id = id,
+         ope_id = Operation2)
+```
+
+# Save
+
+```{r}
+save_all_dfs(file = "../processed_data/clean_dfs.rda")
+```
+
