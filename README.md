@@ -1,0 +1,17 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# hymo_tbv
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+Le projet hymo_tbv vise à analyser les données collectées au moyen du
+protocole
+[ROHZACE](https://www.researchgate.net/publication/391006805_RELEVES_ET_OBSERVATIONS_HYDROMORPHOLOGIQUES_SUR_LES_ZONES_AMONT_DE_COURS_D%27EAU_-_PROTOCOLE_ROHZACE)
+dédié à la caractérisation hydromorphologique des têtes de bassins
+versants.
+
+Les données sont stockées dans une base
+[Grist](https://www.getgrist.com/) hébergée par
+<https://lasuite.numerique.gouv.fr/>.
