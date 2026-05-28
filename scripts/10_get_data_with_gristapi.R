@@ -1,3 +1,5 @@
+#devtools::install_github("spyrales/gristapi")
+
 library(gristapi)
 library(tidyverse)
 
