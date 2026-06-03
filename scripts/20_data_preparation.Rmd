@@ -47,25 +47,44 @@ mapview(station_geo)
 
 # Nettoyage des dataframes
 
-Il s'agit de gérer des détails de format et d'homogénéiser 
+Il s'agit de gérer des détails de format et d'homogénéiser les *dataframes*.
 
-## *station*
+## station
 
 ```{r}
 station <- station %>% 
-  rename(sta_id = id)
+  rename(sta_id = id) %>% 
+  mutate(Modifiee_le = Modifiee_le / 86400,
+         Modifiee_le = as.Date(Modifiee_le))
+
+names(station) <- tolower(names(station))
 ```
 
-## *operation*
+## operation
 
 ```{r}
 operation <- operation %>% 
   rename(ope_id = id,
          sta_id = Station)
+
+operation <- operation %>% 
+  mutate(Date_operation = Date_operation / 86400,
+         Date_operation = as.Date(Date_operation))
+
+operation <- operation %>% 
+  split_list_col(var_id = Operation, var_split = Strates_ripisylve_RG) %>% 
+  split_list_col(var_id = Operation, var_split = Strates_ripisylve_RD) %>% 
+  select(-Strates_ripisylve_RG, -Strates_ripisylve_RD) %>% 
+  mutate(across(c(Nb_petits_bois, Nb_blocs),
+                function(x) ifelse(x == "nan", NA, x)),
+         across(c(Nb_petits_bois, Nb_blocs),
+                as.numeric))
+
+names(operation) <- tolower(names(operation))
 ```
 
 
-## *transect* 
+## transect
 
 ```{r}
 transect <- transect %>% 
@@ -74,24 +93,33 @@ transect <- transect %>%
          H_max_m_ = as.character(H_max_m_),
          H_max_m_ = ifelse(H_max_m_ == "NULL", NA, as.numeric(H_max_m_))) %>% 
   rename(tra_id = id,
-         ope_id = Operation)
+         ope_id = Operation) %>%
+  mutate(tra_ope_id_ope_date = tra_ope_id_ope_date / 86400,
+         tra_ope_id_ope_date = as.Date(tra_ope_id_ope_date))
+
+names(transect) <- tolower(names(transect))
 ```
 
-## *facies*
+## facies
 
 ```{r}
 facies <- facies %>% 
   rename(fac_id = id,
          ope_id = Operation2)
+
+names(facies) <- tolower(names(facies))
 ```
 
-## *photos*
+## photos
 
 ```{r}
 photos <- photos %>% 
   rename(pho_id = id,
          ope_id = Operation2)
+
+names(photos) <- tolower(names(photos))
 ```
+
 
 # Save
 
