@@ -1,0 +1,184 @@
+---
+title: "BDD ROZHACE"
+subtitle: "Extraction pour Inrae"
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+#  bookdown::word_document2
+always_allow_html: true
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Mise en place
+
+## Chargement packages et fonctions
+
+```{r}
+library(tidyverse)
+library(sf)
+library(mapview)
+```
+
+Si besoin charger le package {tod} depuis Github.
+```{r}
+# devtools::install_github("pascalirz/tod")
+```
+
+```{r}
+library(tod)
+
+# installation de functions custom
+my_functions <- list.files(path = "../R", pattern = ".R", full.names = TRUE)
+map(.x = my_functions,
+    .f = source)
+```
+
+## Chargement des données
+
+```{r}
+load(file = "../processed_data/clean_dfs.rda")
+```
+
+## Selection sites
+
+### Chargement des contours de la HER "Massif armoricain"
+
+```{r, eval  = FALSE}
+devtools::install_github("pascalirz/tod")
+```
+
+On charge la couche depuis le SANDRE.
+
+```{r}
+her1_mo <- tod::wfs_sandre(url_wfs = "https://services.sandre.eaufrance.fr/geo/mdo?",
+                        couche = "Hydroecoregion1") %>% 
+  filter(NomHER1 == "ARMORICAIN")
+```
+
+Vérification.
+
+```{r}
+mapview::mapview(her1_mo)
+```
+
+Identifiants des stations qui sont dans la HER Massif Armoricain (MO).
+
+```{r}
+sta_id_mo <- station_geo %>% 
+  st_join(y = her1_mo %>% st_make_valid()) %>% 
+  filter(str_detect(string = NomHER1, pattern = "ARMORICAIN")) %>% 
+  pull(sta_id)
+```
+
+```{r}
+mapview::mapview(her1_mo) +
+  mapview(station_geo %>% filter(sta_id %in% sta_id_mo),
+          col.regions = "red")
+```
+
+## Filtrage de la BDD
+
+On exclut les données sur les stations hors MO.
+
+```{r}
+# ope_id des stations dans le MO
+ope_id_mo <- operation %>% 
+  filter(sta_id %in% sta_id_mo) %>% 
+  pull(ope_id)
+```
+
+```{r}
+station <- station %>% 
+  filter(sta_id %in% sta_id_mo)
+
+operation <- operation %>% 
+  filter(ope_id %in% ope_id_mo)
+
+transect <- transect %>% 
+  filter(ope_id %in% ope_id_mo)
+
+facies <- facies %>% 
+  filter(ope_id %in% ope_id_mo)
+
+wolman <- wolman %>% 
+  filter(ope_id %in% ope_id_mo)
+```
+
+
+
+## Assemblage dataframes
+
+Dataframe assemblant les tables *station* et *operation* sur les 17 stations du MO. 
+
+```{r}
+sta_ope <- station %>% 
+  left_join(y = operation,
+            by = "sta_id") %>% 
+  filter(sta_id %in% sta_id_mo)
+```
+
+## Transects (hauteurs et largeurs)
+
+### LPB
+
+```{r}
+lpb <- transect %>% 
+  group_by(ope_id) %>% 
+    summarise (lpb_moy = mean(lpb_m_, na.rm = FALSE)) %>% 
+  ungroup()
+```
+
+### HPB
+
+**Principe**
+
+Pour une station qui a été parfaitement échantillonnée, on dispose de 15 transects dont 
+
+```{r}
+hpb <- transect %>% 
+  select(tra_id:h_ligne_d_eau) %>% 
+  mutate(
+    across(
+      .cols = ends_with("_m_"),
+      .fns = function(x) {x + h_ligne_d_eau}
+    )
+  )
+
+temp <- hpb %>% 
+    select(h1_m_:h8_m_) %>%
+    mutate(hpb = rowMeans(., na.rm = TRUE))
+
+hpb <- hpb %>% 
+  cbind(hpb_moy_tra = temp$hpb) %>% 
+  group_by(ope_id) %>% 
+  summarise(hpb_moy = mean(hpb_moy_tra, na.rm = TRUE))
+```
+
+
+```{r}
+data <- sta_ope %>% 
+  select(sta_id:date_operation) %>% 
+  left_join(y = lpb) %>% 
+  left_join(y = hpb)
+```
+
+
+# Save
+
+```{r}
+rm(temp)
+save_all_dfs(file = "../processed_data/lpb_hpb_mo.rda")
+
+library(openxlsx)
+
+data_frames <- list("donnees" = data, "sta_ope" = sta_ope, "transect" = transect)
+
+write.xlsx(data_frames,
+           file = "processed_data/tbv_inrae.xlsx")
+```
+

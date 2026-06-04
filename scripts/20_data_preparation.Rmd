@@ -39,7 +39,8 @@ load(file = "../processed_data/grist_dfs.rda")
 
 ```{r}
 station_geo <- station %>% 
-  st_as_sf(coords = c("X1", "Y1"), crs = st_crs(4326))
+  st_as_sf(coords = c("X1", "Y1"), crs = st_crs(4326)) %>% 
+  rename(sta_id = id)
 
 mapview(station_geo)
 ```
@@ -53,9 +54,11 @@ Il s'agit de gérer des détails de format et d'homogénéiser les *dataframes*.
 
 ```{r}
 station <- station %>% 
-  rename(sta_id = id) %>% 
-  mutate(Modifiee_le = Modifiee_le / 86400,
-         Modifiee_le = as.Date(Modifiee_le))
+  rename(sta_id = id,
+         sta_modifiee_le = Modifiee_le,
+         sta_creee_par = Creee_par) %>% 
+  mutate(sta_modifiee_le = sta_modifiee_le / 86400,
+         sta_modifiee_le = as.Date(sta_modifiee_le))
 
 names(station) <- tolower(names(station))
 ```
@@ -65,11 +68,16 @@ names(station) <- tolower(names(station))
 ```{r}
 operation <- operation %>% 
   rename(ope_id = id,
-         sta_id = Station)
+         sta_id = Station,
+         ope_modifiee_le = Modifiee_le,
+         ope_creee_par = Creee_par)
 
 operation <- operation %>% 
   mutate(Date_operation = Date_operation / 86400,
-         Date_operation = as.Date(Date_operation))
+         Date_operation = as.Date(Date_operation),
+         ope_modifiee_le = ope_modifiee_le / 86400,
+         ope_modifiee_le = as.Date(ope_modifiee_le),
+         )
 
 operation <- operation %>% 
   split_list_col(var_id = Operation, var_split = Strates_ripisylve_RG) %>% 
@@ -109,6 +117,17 @@ facies <- facies %>%
 
 names(facies) <- tolower(names(facies))
 ```
+
+## Wolman
+
+```{r}
+wolman <- wolman %>% 
+  rename(wol_id = id,
+         ope_id = Operation2)
+
+names(wolman) <- tolower(names(wolman))
+```
+
 
 ## photos
 
